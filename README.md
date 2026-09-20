@@ -96,6 +96,6 @@ Certifique-se de ter o Python instalado no seu ambiente.
 ```
 3. Executar o Dashboard
 ```bash
-    python -m streamlit run app_chargegrid_sprint3.py
+    python -m streamlit run poc_chargegrid.py
 ```
 O servidor local sera iniciado e a interface abrira automaticamente no seu navegador padrao.
