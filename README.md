@@ -3,7 +3,7 @@
 
 ---
 
-## Equipe Envolvida
+## Grupo 03
 * Pedro Andreassa - RM: 569318
 * Pedro Yoshikado Garcia - RM: 570449
 * Rafael Ferreirinha - RM: 571949
@@ -11,10 +11,10 @@
 
 ---
 
-## 1. Visao Geral do Projeto
+## 1. Visão Geral do Projeto
 O ChargeGrid Intelligence e uma solucao de automacao e gestao inteligente de demanda energetica desenvolvida para acelerar a transicao para a mobilidade eletrica comercial.
 
-Na Sprint 3, a solucao evoluiu de uma prova de conceito em terminal para um prototipo funcional e integrado acoplado a um dashboard interativo em Streamlit. O sistema realiza a simulacao do ciclo operacional de 24 horas de um edificio comercial, gerenciando em tempo real o equilibrio entre a geracao fotovoltaica (ecossistema GoodWe), o consumo predial e a alocacao de potencia de estacoes de recarga veicular (EV).
+Na Sprint 3, a solução evoluiu de uma prova de conceito em terminal para um prototipo funcional e integrado acoplado a um dashboard interativo em Streamlit. O sistema realiza a simulacao do ciclo operacional de 24 horas de um edificio comercial, gerenciando em tempo real o equilibrio entre a geracao fotovoltaica (ecossistema GoodWe), o consumo predial e a alocacao de potencia de estacoes de recarga veicular (EV).
 
 ---
 
@@ -57,11 +57,27 @@ graph TD
 
 - Algoritmo de Priorizacao Dinamica (DLB): Garante a protecao da infraestrutura fisica do imovel. Evita a ultrapassagem da demanda contratada junto a concessionaria de energia (impedindo multas astronómicas) e elimina a necessidade de investimentos financeiros imediatos no upgrade de subestacoes fisicas.
 
-- Padrao de Telemetria em JSON: Garante interoperabilidade nativa com gateways IoT, protocolos de recarga (como OCPP) e plataformas de nuvem corporativas.
+- Padrão de Telemetria em JSON: Garante interoperabilidade nativa com gateways IoT, protocolos de recarga (como OCPP) e plataformas de nuvem corporativas.
 
 ---
 
-## 4. Resultados e Dados Funcionais Apresentados
+## O que é Dynamic Load Balancing (DLB)?
+
+**DLB** significa **Dynamic Load Balancing** (ou *Balanceamento Dinâmico de Carga*). 
+
+No contexto da infraestrutura para veículos elétricos (EV) e microredes de energia, o DLB é uma tecnologia de gerenciamento inteligente que monitora continuamente a demanda de energia do edifício em tempo real e ajusta automaticamente a potência entregue a cada carregador.
+
+## 4. Como o DLB atua no ChargeGrid Intelligence:
+1. **Proteção contra Sobrecarga:** Monitora a potência total consumida pelo prédio e a geração solar dos inversores GoodWe, garantindo que a demanda líquida nunca ultrapasse o limite da demanda contratada junto à concessionária.
+2. **Priorização Inteligente de Cargas:** Quando o consumo do prédio atinge níveis críticos (como no Horário de Pico), o algoritmo não corta a energia do imóvel. Em vez disso, reduz ou desliga temporariamente os carregadores seguindo uma ordem de prioridade definida:
+   * **Alta Prioridade (E1 - Van Frota):** Carga mantida no máximo para garantir a operação comercial.
+   * **Média Prioridade (E2 - Diretoria):** Carga mitigada em cenários de alta demanda.
+   * **Baixa Prioridade (E3 - Visitante):** Carga reduzida ou desligada em primeiro lugar para aliviar a rede.
+3. **Eficiência e Economia:** Evita a cobrança de multas por ultrapassagem de demanda contratada e dispensa investimentos de alto custo na ampliação física da infraestrutura elétrica do local.
+
+---
+
+## 5. Resultados e Dados Funcionais Apresentados
 - O prototipo simula a dinamica diurna e noturna do edificio:
 
 - Fora do Horario de Pico (Diurno - 06h as 17h): A geracao solar GoodWe abate o consumo predial. O saldo de potencia na rede permite que todas as estacoes (E1, E2 e E3) operem na sua capacidade maxima de 22.0 kW.
@@ -72,7 +88,7 @@ graph TD
 
 ---
 
-5. Conexao com os Conteudos da Disciplina
+## 6. Conexao com os Conteudos da Disciplina
 - Pensamento Computacional: Decomposicao do sistema de distribuicao eletrica, abstracao de parametros operacionais e criacao do algoritmo defensivo de corte de carga.
 
 - Programacao Aplicada: Construcao da aplicacao web funcional, gestao de estados (session_state), renderizacao de graficos dinamicos com Altair e manipulacao de DataFrames.
