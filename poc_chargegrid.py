@@ -1,35 +1,40 @@
+import streamlit as st
+import pandas as pd
 import time
-import random
+import altair as alt
 
-POTENCIA_CONTRATADA_KW = 150.0  # Limite máximo que o prédio suporta
-CAPACIDADE_MAX_CARREGADOR = 22.0  # Potência máxima de cada carregador comercial
+st.set_page_config(page_title="ChargeGrid Intelligence - Sprint 3", layout="centered")
 
-estacoes_recarga = {
-    "Estacao_01_VanFrota": {"carro_conectado": True, "potencia_atual_kw": 22.0, "prioridade": "Alta"},
-    "Estacao_02_Diretoria": {"carro_conectado": True, "potencia_atual_kw": 22.0, "prioridade": "Media"},
-    "Estacao_03_Visitante": {"carro_conectado": True, "potencia_atual_kw": 22.0, "prioridade": "Baixa"}
-}
+st.title("ChargeGrid Intelligence")
+st.caption("GoodWe Challenge - Prova de Conceito Integrada (Sprint 3)")
 
-def rodar_algoritmo_dlb(consumo_predio, geracao_solar):
-    print("\n" + "=" * 60)
-    print(f" LOG CHARGEGRID INTELLIGENCE - MONITORAMENTO EM TEMPO REAL")
-    print("=" * 60)
-    print(f"[-] Consumo Atual do Prédio: {consumo_predio:.2f} kW")
-    print(f"[+] Geração Solar Fotovoltaica: {geracao_solar:.2f} kW")
+POTENCIA_CONTRATADA_BASE = 150.0
+CAPACIDADE_MAX_CARREGADOR = 22.0
+
+st.sidebar.header("Modo de Operacao")
+modo_simulacao = st.sidebar.radio("Selecione o Controle", ["Manual", "Simulacao Automatica (24h)"])
+
+
+def processar_telemetria(hora_simulada, consumo_predio, geracao_solar, potencia_limite, status_horario):
+    estacoes_recarga = {
+        "Estacao_01_VanFrota": {"carro_conectado": True, "potencia_atual_kw": CAPACIDADE_MAX_CARREGADOR,
+                                "prioridade": "Alta"},
+        "Estacao_02_Diretoria": {"carro_conectado": True, "potencia_atual_kw": CAPACIDADE_MAX_CARREGADOR,
+                                 "prioridade": "Media"},
+        "Estacao_03_Visitante": {"carro_conectado": True, "potencia_atual_kw": CAPACIDADE_MAX_CARREGADOR,
+                                 "prioridade": "Baixa"}
+    }
 
     demanda_liquida_predio = max(0.0, consumo_predio - geracao_solar)
+    demanda_carregadores_inicial = sum(estacao["potencia_atual_kw"] for estacao in estacoes_recarga.values())
+    demanda_total_sistema = demanda_liquida_predio + demanda_carregadores_inicial
 
-    demanda_carregadores = sum(estacao["potencia_atual_kw"] for estacao in estacoes_recarga.values())
+    dlb_ativo = False
+    logs_dlb = []
 
-    demanda_total_sistema = demanda_liquida_predio + demanda_carregadores
-
-    print(f"[~] Demanda Atual dos Carregadores: {demanda_carregadores:.2f} kW")
-    print(f"[*] Demanda Total Estimada na Rede: {demanda_total_sistema:.2f} kW / Limite: {POTENCIA_CONTRATADA_KW} kW")
-
-    if demanda_total_sistema > POTENCIA_CONTRATADA_KW:
-        print("\n[ ALERTA DE SOBRECARGA DETECTADO! ATUANDO VIA PROTOCOLO DLB ]")
-        excesso = demanda_total_sistema - POTENCIA_CONTRATADA_KW
-        print(f"Sobrecarga de: {excesso:.2f} kW. Reduzindo carga dos carros de menor prioridade...")
+    if demanda_total_sistema > potencia_limite:
+        dlb_ativo = True
+        excesso = demanda_total_sistema - potencia_limite
         ordem_corte = ["Baixa", "Media", "Alta"]
 
         for prioridade in ordem_corte:
@@ -37,26 +42,132 @@ def rodar_algoritmo_dlb(consumo_predio, geracao_solar):
                 if dados["prioridade"] == prioridade and dados["potencia_atual_kw"] > 0:
                     if excesso >= dados["potencia_atual_kw"]:
                         excesso -= dados["potencia_atual_kw"]
-                        print(f" -> [DLB] Estação '{nome_estacao}' ({prioridade}) DESLIGADA temporariamente (0 kW).")
+                        logs_dlb.append(f"Estacao '{nome_estacao}' ({prioridade}) DESLIGADA (0 kW).")
                         dados["potencia_atual_kw"] = 0.0
                     else:
                         dados["potencia_atual_kw"] -= excesso
-                        print(
-                            f" -> [DLB] Estação '{nome_estacao}' ({prioridade}) LIMITADA para {dados['potencia_atual_kw']:.2f} kW.")
+                        logs_dlb.append(
+                            f"Estacao '{nome_estacao}' ({prioridade}) LIMITADA para {dados['potencia_atual_kw']:.2f} kW.")
                         excesso = 0
                         break
             if excesso <= 0:
                 break
     else:
-        print("\n[ STATUS: REDE ESTÁVEL ]")
-        print("Potência dentro dos limites. Carregamento em velocidade máxima autorizado.")
-
         for dados in estacoes_recarga.values():
             dados["potencia_atual_kw"] = CAPACIDADE_MAX_CARREGADOR
 
+    demanda_carregadores_final = sum(estacao["potencia_atual_kw"] for estacao in estacoes_recarga.values())
+    demanda_final_sistema = demanda_liquida_predio + demanda_carregadores_final
 
-if __name__ == "__main__":
+    return {
+        "hora": hora_simulada,
+        "consumo_predio": consumo_predio,
+        "geracao_solar": geracao_solar,
+        "potencia_limite": potencia_limite,
+        "demanda_final": demanda_final_sistema,
+        "dlb_ativo": dlb_ativo,
+        "logs_dlb": logs_dlb,
+        "estacoes": estacoes_recarga,
+        "demanda_liquida": demanda_liquida_predio,
+        "status_horario": status_horario
+    }
 
-    rodar_algoritmo_dlb(consumo_predio=90.0, geracao_solar=45.0)
-    time.sleep(2)
-    rodar_algoritmo_dlb(consumo_predio=130.0, geracao_solar=0.0)
+
+def renderizar_dashboard(dados, container):
+    with container.container():
+        with st.container(border=True):
+            col1, col2 = st.columns(2)
+            col1.metric("Consumo Predio", f"{dados['consumo_predio']:.1f} kW")
+            col2.metric("Geracao Solar", f"{dados['geracao_solar']:.1f} kW")
+
+            col3, col4 = st.columns(2)
+            col3.metric("Demanda Total", f"{dados['demanda_final']:.1f} / {dados['potencia_limite']:.1f} kW")
+            if dados['dlb_ativo']:
+                col4.metric("Status DLB", "SOBRECARGA", delta="Atuacao Dinamica", delta_color="inverse")
+            else:
+                col4.metric("Status DLB", "ESTAVEL", delta="Normal")
+
+        if dados['dlb_ativo']:
+            st.error(f"ALERTA DE SOBRECARGA DETECTADO ({dados['hora']}:00h) - ATUANDO VIA PROTOCOLO DLB")
+            for log in dados['logs_dlb']:
+                st.write(f"-> {log}")
+        else:
+            st.success(f"STATUS: REDE ESTAVEL ({dados['hora']}:00h) - Potencia dentro dos limites.")
+
+        with st.container(border=True):
+            st.subheader(f"Potencia Alocada por Estacao - {dados['hora']}:00h (kW)")
+
+            nomes_formatados = {
+                "Estacao_01_VanFrota": "E1 - Van Frota",
+                "Estacao_02_Diretoria": "E2 - Diretoria",
+                "Estacao_03_Visitante": "E3 - Visitante"
+            }
+
+            df_grafico = pd.DataFrame({
+                "Estacao": [nomes_formatados[k] for k in dados['estacoes'].keys()],
+                "Potencia": [round(d["potencia_atual_kw"], 2) for d in dados['estacoes'].values()]
+            })
+
+            chart = alt.Chart(df_grafico).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+                x=alt.X('Estacao:N', title='Estacao', sort=None, axis=alt.Axis(labelAngle=0)),
+                y=alt.Y('Potencia:Q', scale=alt.Scale(domain=[0, 25]), title='Potencia (kW)'),
+                color=alt.value('#1f77b4')
+            ).properties(height=280)
+
+            st.altair_chart(chart, use_container_width=True)
+
+        with st.container(border=True):
+            st.subheader("Telemetria de Saida (Payload JSON)")
+            telemetria_json = {
+                "timestamp": int(time.time()),
+                "hora_simulada": f"{dados['hora']}:00h",
+                "periodo_operacional": dados['status_horario'],
+                "consumo_predio_kw": dados['consumo_predio'],
+                "geracao_solar_kw": dados['geracao_solar'],
+                "demanda_liquida_kw": dados['demanda_liquida'],
+                "limite_contratado_kw": dados['potencia_limite'],
+                "dlb_acionado": dados['dlb_ativo'],
+                "estacoes_status": {k: {"potencia_kw": round(v["potencia_atual_kw"], 2), "prioridade": v["prioridade"]}
+                                    for k, v in dados['estacoes'].items()}
+            }
+            st.json(telemetria_json)
+
+
+painel_dinamico = st.empty()
+
+if modo_simulacao == "Simulacao Automatica (24h)":
+    iniciar = st.sidebar.button("Play na Simulacao (00h as 23h)")
+
+    if iniciar:
+        for h in range(24):
+            if 18 <= h <= 21:
+                status_h = "HORARIO DE PICO"
+                c_predio = 145.0
+                g_solar = 0.0
+                p_limite = 130.0
+            elif 6 <= h < 18:
+                status_h = "FORA DE PICO (DIURNO)"
+                c_predio = 85.0
+                g_solar = 65.0 if 10 <= h <= 15 else 25.0
+                p_limite = POTENCIA_CONTRATADA_BASE
+            else:
+                status_h = "FORA DE PICO (NOTURNO)"
+                c_predio = 40.0
+                g_solar = 0.0
+                p_limite = POTENCIA_CONTRATADA_BASE
+
+            res = processar_telemetria(h, c_predio, g_solar, p_limite, status_h)
+            renderizar_dashboard(res, painel_dinamico)
+            time.sleep(0.8)
+    else:
+        res = processar_telemetria(12, 85.0, 65.0, POTENCIA_CONTRATADA_BASE, "FORA DE PICO (DIURNO)")
+        renderizar_dashboard(res, painel_dinamico)
+else:
+    st.sidebar.header("Parametros do Predio")
+    p_limite = st.sidebar.number_input("Potencia Contratada (kW)", value=POTENCIA_CONTRATADA_BASE, step=10.0)
+    st.sidebar.header("Telemetria de Entrada")
+    g_solar = st.sidebar.slider("Geracao Solar Fotovoltaica (kW)", 0.0, 100.0, 45.0)
+    c_predio = st.sidebar.slider("Consumo do Predio (kW)", 50.0, 180.0, 130.0)
+
+    res = processar_telemetria(12, c_predio, g_solar, p_limite, "MANUAL")
+    renderizar_dashboard(res, painel_dinamico)
