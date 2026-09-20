@@ -61,13 +61,13 @@ graph TD
 
 ---
 
-## O que é Dynamic Load Balancing (DLB)?
+## 4. O que é Dynamic Load Balancing (DLB)?
 
 **DLB** significa **Dynamic Load Balancing** (ou *Balanceamento Dinâmico de Carga*). 
 
 No contexto da infraestrutura para veículos elétricos (EV) e microredes de energia, o DLB é uma tecnologia de gerenciamento inteligente que monitora continuamente a demanda de energia do edifício em tempo real e ajusta automaticamente a potência entregue a cada carregador.
 
-## 4. Como o DLB atua no ChargeGrid Intelligence:
+**Como o DLB atua no ChargeGrid Intelligence:**
 1. **Proteção contra Sobrecarga:** Monitora a potência total consumida pelo prédio e a geração solar dos inversores GoodWe, garantindo que a demanda líquida nunca ultrapasse o limite da demanda contratada junto à concessionária.
 2. **Priorização Inteligente de Cargas:** Quando o consumo do prédio atinge níveis críticos (como no Horário de Pico), o algoritmo não corta a energia do imóvel. Em vez disso, reduz ou desliga temporariamente os carregadores seguindo uma ordem de prioridade definida:
    * **Alta Prioridade (E1 - Van Frota):** Carga mantida no máximo para garantir a operação comercial.
