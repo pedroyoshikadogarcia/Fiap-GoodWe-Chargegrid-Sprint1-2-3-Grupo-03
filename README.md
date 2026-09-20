@@ -87,8 +87,8 @@ Certifique-se de ter o Python instalado no seu ambiente.
 
 1. Clonar o Repositorio
 ```bash
-    git clone [https://github.com/SEU-USUARIO/Fiap-GoodWe-Chargegrid-Sprint2.git](https://github.com/SEU-USUARIO/Fiap-GoodWe-Chargegrid-Sprint2.git)
-    cd Fiap-GoodWe-Chargegrid-Sprint2
+    git clone [[https://github.com/SEU-USUARIO/Fiap-GoodWe-Chargegrid-Sprint2.git](https://github.com/SEU-USUARIO/Fiap-GoodWe-Chargegrid-Sprint2.git)](https://github.com/pedroyoshikadogarcia/Fiap-GoodWe-             Chargegrid-Sprint1-2-3-Grupo-03.git)
+    cd Fiap-GoodWe-Chargegrid-Sprint1-2-3-Grupo-03
 ```
 2. Instalar as Dependências
 ```bash
