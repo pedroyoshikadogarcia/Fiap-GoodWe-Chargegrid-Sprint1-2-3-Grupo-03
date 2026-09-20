@@ -5,7 +5,7 @@
 
 ## Equipe Envolvida
 * Pedro Andreassa - RM: 569318
-* Pedro Yoshikado - RM: 570449
+* Pedro Yoshikado Garcia - RM: 570449
 * Rafael Ferreirinha - RM: 571949
 * Thiago Maluf - RM: 569852
 
